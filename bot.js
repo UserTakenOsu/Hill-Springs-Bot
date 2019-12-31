@@ -2,69 +2,83 @@ const Discord = require('discord.js');
 const { prefix, token } = require('./config.json');
 const client = new Discord.Client();
 
-//Gets id of channel 'general'
-const general = client.channels.find(c => c.name === 'general');
-const generalId = general ? general.id : null;
-
 //Creates variables with wide enough scope for various reminder purposes.
 var remindTime = new Number();
-var currentDate = new Date();
 var messageDate;
 
 client.once('ready', () => {
-	console.log('Ready!');
+    console.log('Ready!');
 });
 
 client.on('message', message => {
 
-    //Gets id of channel 'daily-fact'
-    const dailyFact = client.channels.find(c => c.name === 'daily-fact');
-    const dailyFactId = dailyFact ? dailyFact.id : null;
+    //Grabs id's of the guild and some of it's channels for use in creating the reminder.
+    const guild = message.guild.id;
 
+    const general = message.guild.channels.find(channel => channel.name === 'general').id;
+    const botCommands = message.guild.channels.find(channel => channel.name === 'bot-commands').id;
+    const dailyFact = message.guild.channels.find(channel => channel.name === 'daily-fact').id;
 
-    //Stores date of most recent daily fact message to determine if a reminder is neccessary.
-    if (message.channel.id == dailyFactId) {
-        messageDate = message.createdAt.getDate();
-    }
+    //stores the general channel's id as a global variable for use in the actual reminder.
+    global.general = general;
 
-    //Gets id of channel 'bot-commands'
-    const botCommands = client.channels.find(c => c.name === 'bot-commands');
-    const botCommandsId = botCommands ? botCommands.id : null;
+    //Exits early if message is in general. This allows the bot to still talk in general for the reminder, while also not responding to commands in general. Basically server QOL.
+    if (message.channel.id == general) {
+        return;
 
-    //Handles commands only if they are sent in bot-commands.
-    if (message.channel.id == botCommandsId) {
+    //Continues if message channel is not general.
+    } else if (message.channel.id != general) {
 
-        //Exits early if the message does not start with the prefix (;), or if the message was sent by a bot.
-        if (!message.content.startsWith(prefix) || message.author.bot) return;
+        //Stores date of most recent daily fact message to determine if a reminder is neccessary.
+        if (message.channel.id == dailyFact) {
+            messageDate = message.createdAt.getDate();
+        }
 
-        const args = message.content.slice(prefix.length).split(/ +/);
-        const command = args.shift().toLowerCase();
+        //Handles commands only if they are sent in bot-commands.
+        if (message.channel.id == botCommands) {
 
-        //Handles all commands that are restricted to admins.
-        if (message.member.hasPermission("ADMINISTRATOR")) {
+            //Exits early if the message does not start with the prefix (;), or if the message was sent by a bot.
+            if (!message.content.startsWith(prefix) || message.author.bot) return;
 
-            //Sets the 1 hour period that the bot will send a reminder during.
-            if (command === 'setTime') {
+            const args = message.content.slice(prefix.length).split(/ +/);
+            const command = args.shift().toLowerCase();
 
-                //Exits if there isn't an argument for time.
-                if (!args.length) {
-                    return message.channel.send(`You didn't specify an hour, ${message.author}.`);
+            //Handles all commands that are restricted to admins.
+            if (!message.member.hasPermission("ADMINISTRATOR")) {
+                return message.channel.send(`${message.author}, you do not have permission to use my commands.`);
+            } else if (message.member.hasPermission("ADMINISTRATOR")) {
+
+                //Sets the 1 hour period that the bot will send a reminder during.
+                if (command === 'reminder') {
+
+                    //Exits if there isn't an argument for time.
+                    if (!args.length) {
+                        return message.channel.send(`You didn't specify an hour, ${message.author}.`);
+                    }
+
+                    const CST = parseInt(args[0]);
+
+                    //Exits if the argument is not a valid integer.
+                    if (isNaN(CST)) {
+                        return message.channel.send(`${message.author}, you did not specify an integer.`);
+                    } else if (CST < 0 || CST > 23) {
+                        return message.channel.send(`${message.author}, you need to input a number between 0 and 23.`);
+                    } else {
+                        remindTime = CST;
+                        global.reminder = CST;
+                    }
+
+                    //Logic for morning and afternoon confirmations.
+                    if (remindTime == 0) {
+                        return message.channel.send(`I will now send a reminder at 12 AM Central.`);
+                    } else if (0 < remindTime && remindTime < 12) {
+                        return message.channel.send(`I will now send a reminder at ${remindTime} AM Central.`);
+                    } else if (remindTime == 12) {
+                        return message.channel.send(`I will now send a reminder at 12 PM Central.`);
+                    } else if (12 < remindTime) {
+                        return message.channel.send(`I will now send a reminder at ${remindTime - 12} PM Central.`)
+                    }
                 }
-
-                const CST = parseInt(args[0]);
-
-                //Exits if the argument is not a valid integer.
-                if (isNaN(CST)) {
-                    return message.channel.send(`${message.author}, you did not specify an integer.`);
-                } else if (CST < 0 || CST > 23) {
-                    return message.channel.send(`${message.author}, you need to input a number between 0 and 23.`);
-                }
-
-                //Store CST constant in a variable for reminder usage.
-                remindTime = CST;
-
-                //Confimation message.
-                return message.channel.send(`I am now set to remind you at some point during hour ${CST}, CST.`);
             }
         }
     }
@@ -72,16 +86,18 @@ client.on('message', message => {
 
 //Executes function every hour
 setInterval(function(){
-    //Exits early if the current hour is not the same as the reminder hour.
-    if(currentDate.getHours() != remindTime) {
+    var date = new Date();
+    
+    //Exits if the last daily fact was posted today.
+    if (date.getDate() != messageDate) {
         return;
-    //Exits early if the last fact's date is the same as the current date.
-    } else if (messageDate == currentDate.getDate()) {
-        return;
-    //Mentions the admins with a reminder if there has not been a fact posted yet.
-    } else if (messageDate != currentDate.getDate()) {
-        client.channels.get(generalId).send(`@402185630853103617 @631168537137905684 @270616189024206850 @451770115642359808 Don't forget about the daily fact!`);
+    
+    //Only sends the reminder if the current hour is the hour specified by the admins AND if the time is on the exact hour right now.
+    } else if (date.getHours() == global.reminder) {
+        if (date.getMinutes() == 0) {
+            return client.channels.get(global.general).send(`@402185630853103617 @631168537137905684 @270616189024206850 @451770115642359808 Don't forget about the daily fact!`);
+        }
     }
-}, MIN_INTERVAL = 1000 * 60 * 60)
+}, 60000);
 
 client.login(token);
