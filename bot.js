@@ -9,6 +9,7 @@ client.time = require('./time.json');
 var remindTime = new Number();
 var messageDate;
 var reminder = client.time.time;
+var date = new Date();
 
 client.once('ready', () => {
     console.log('Ready!');
@@ -95,7 +96,7 @@ client.on('message', message => {
                         .addField(';help', 'What you are reading right now!')
                     return message.channel.send(embed);
                 } else if (command === 'values') {
-                    return channel.message.send(`**Last Daily Fact message date:** ${messageDate}. \nCurrent date: ${date.getDate()} \nReminder time: ${remindTime} \nStored time: ${reminder}`)
+                    return message.channel.send(`**Last Daily Fact message date:** ${messageDate}. \n**Current date:** ${date.getDate()} \n**Reminder time:** ${remindTime} \n**Stored time:** ${reminder}`)
                 }
             }
         }
@@ -104,7 +105,6 @@ client.on('message', message => {
 
 //Executes function every hour
 setInterval(function(){
-    var date = new Date();
     
     //Exits if the last daily fact was posted today.
     if (date.getDate() != messageDate) {
