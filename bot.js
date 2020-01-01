@@ -10,8 +10,6 @@ var remindTime = new Number();
 var messageDate;
 var reminder = client.time.time;
 
-console.log(reminder);
-
 client.once('ready', () => {
     console.log('Ready!');
 });
