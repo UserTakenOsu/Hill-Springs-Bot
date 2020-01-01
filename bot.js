@@ -62,17 +62,16 @@ client.on('message', message => {
                         return message.channel.send(`You didn't specify an hour, ${message.author}.`);
                     }
 
-                    const CST = parseInt(args[0]);
+                    const remindTime = parseInt(args[0]);
 
                     //Exits if the argument is not a valid integer.
-                    if (isNaN(CST)) {
+                    if (isNaN(remindTime)) {
                         return message.channel.send(`${message.author}, you did not specify an integer.`);
-                    } else if (CST < 0 || CST > 23) {
+                    } else if (remindTime < 0 || remindTime > 23) {
                         return message.channel.send(`${message.author}, you need to input a number between 0 and 23.`);
                     } else {
-                        remindTime = CST;
                         client.time = {
-                            time: CST
+                            time: remindTime
                         }
                         fs.writeFile('./time.json', JSON.stringify(client.time, null, 4), err => {
                             if(err) throw err;
@@ -90,7 +89,15 @@ client.on('message', message => {
                         return message.channel.send(`I will now send a reminder at ${remindTime - 12} PM Central.`)
                     }
                 } else if (command === 'help') {
-                    return message.channel.send(`;reminder [time], with [time] being a number between 0 and 23. 0 is midnight, 23 is 11pm. Times are in central US.`);
+                    const embed = new Discord.RichEmbed()
+                        .setColor('#0099ff')
+                        .setTitle('List Of Commands')
+                        .addField(';reminder [value]', 'Sets the reminder to be sent at whatever [value] is. [value] can be any number from 0 to 23, with 0 being midnight and 23 being 11pm. All times are in US Central.')
+                        .addField(';values', 'Lists various stored vlaues for debugging purposes.')
+                        .addField(';help', 'What you are reading right now!')
+                    return message.channel.send(embed);
+                } else if (command === 'values') {
+                    return channel.message.send(`**Last Daily Fact message date:** ${messageDate}. \nCurrent date: ${date.getDate()} \nReminder time: ${remindTime} \nStored time: ${reminder}`)
                 }
             }
         }
