@@ -1,10 +1,16 @@
 const Discord = require('discord.js');
 const { prefix, token } = require('./config.json');
 const client = new Discord.Client();
+const fs = require('fs');
+client.time = require('./time.json');
+
 
 //Creates variables with wide enough scope for various reminder purposes.
 var remindTime = new Number();
 var messageDate;
+var reminder = client.time.time;
+
+console.log(reminder);
 
 client.once('ready', () => {
     console.log('Ready!');
@@ -65,7 +71,12 @@ client.on('message', message => {
                         return message.channel.send(`${message.author}, you need to input a number between 0 and 23.`);
                     } else {
                         remindTime = CST;
-                        global.reminder = CST;
+                        client.time = {
+                            time: CST
+                        }
+                        fs.writeFile('./time.json', JSON.stringify(client.time, null, 4), err => {
+                            if(err) throw err;
+                        });
                     }
 
                     //Logic for morning and afternoon confirmations.
@@ -78,6 +89,8 @@ client.on('message', message => {
                     } else if (12 < remindTime) {
                         return message.channel.send(`I will now send a reminder at ${remindTime - 12} PM Central.`)
                     }
+                } else if (command === 'help') {
+                    return message.channel.send(`;reminder [time], with [time] being a number between 0 and 23. 0 is midnight, 23 is 11pm. Times are in central US.`);
                 }
             }
         }
@@ -93,7 +106,7 @@ setInterval(function(){
         return;
     
     //Only sends the reminder if the current hour is the hour specified by the admins AND if the time is on the exact hour right now.
-    } else if (date.getHours() == global.reminder) {
+    } else if (date.getHours() == reminder) {
         if (date.getMinutes() == 0) {
             return client.channels.get(global.general).send(`@402185630853103617 @631168537137905684 @270616189024206850 @451770115642359808 Don't forget about the daily fact!`);
         }

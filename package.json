@@ -10,6 +10,9 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "discord.js": "^11.5.1"
+    "discord.js": "^11.5.1",
+    "fs": "0.0.1-security",
+    "node-localstorage": "^2.1.5",
+    "write-file-atomic": "^3.0.1"
   }
 }
