@@ -6,10 +6,8 @@ client.time = require('./time.json');
 
 
 //Creates variables with wide enough scope for various reminder purposes.
-var remindTime = new Number();
 var messageDate;
 var reminder = client.time.time;
-var date = new Date();
 
 client.once('ready', () => {
     console.log('Ready!');
@@ -27,6 +25,8 @@ client.on('message', message => {
         const general = message.guild.channels.find(channel => channel.name === 'general').id;
         const botCommands = message.guild.channels.find(channel => channel.name === 'bot-commands').id;
         const dailyFact = message.guild.channels.find(channel => channel.name === 'daily-fact').id;
+
+        global.date = new Date();
 
         //stores the general channel's id as a global variable for use in the actual reminder.
         global.general = general;
@@ -79,6 +79,7 @@ client.on('message', message => {
                             fs.writeFile('./time.json', JSON.stringify(client.time, null, 4), err => {
                                 if(err) throw err;
                             });
+                            reminder = client.time.time;
                         }
 
                         //Logic for morning and afternoon confirmations.
@@ -100,7 +101,7 @@ client.on('message', message => {
                             .addField(';help', 'What you are reading right now!')
                         return message.channel.send(embed);
                     } else if (command === 'values') {
-                        return message.channel.send(`**Last Daily Fact message date:** ${messageDate}. \n**Current date:** ${date.getDate()} \n**Reminder time:** ${remindTime} \n**Stored time:** ${reminder}`)
+                        return message.channel.send(`**Last Daily Fact message date:** ${messageDate}. \n**Current date:** ${global.date.getDate()} \n**Reminder time:** ${reminder} \n**Bugs in the code:** lol no clue`);
                     }
                 }
             }
@@ -110,14 +111,14 @@ client.on('message', message => {
 
 //Executes function every hour
 setInterval(function(){
-    
+
     //Exits if the last daily fact was posted today.
-    if (date.getDate() != messageDate) {
+    if (global.date.getDate() != messageDate) {
         return;
     
     //Only sends the reminder if the current hour is the hour specified by the admins AND if the time is on the exact hour right now.
-    } else if (date.getHours() == reminder) {
-        if (date.getMinutes() == 0) {
+    } else if (global.date.getHours() == reminder) {
+        if (global.date.getMinutes() == 0) {
             return client.channels.get(global.general).send(`@402185630853103617 @631168537137905684 @270616189024206850 @451770115642359808 Don't forget about the daily fact!`);
         }
     }
